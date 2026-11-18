@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+labs/*/results/*
+!labs/*/results/.gitkeep
+.promptfoo/
+.hypothesis/
+
+# built from hub/src by python hub/build_hub.py
+hub/course-hub.html
