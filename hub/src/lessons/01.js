@@ -280,10 +280,11 @@ window.LESSONS["01"] = {
 
   // ── Station 5: מעבדה
   lab: {
-    intro: "התרגילים רצים במחשב, מתוך ריפו הקורס. כל פקודה רצה מתיקיית השורש של הריפו. אחרי כל תרגיל, שלח לי בצ'אט את טבלת הסיכום שהכלי מדפיס, יחד עם כמה שורות על מה שראית ולמה לדעתך זה קרה. אני בודק ומחזיר הערות כמו מנחה בקורס.",
+    repoPath: "labs/01-prompting",
+    intro: "התרגילים רצים במחשב, מתוך ריפו הקורס. כל פקודה רצה מתיקיית השורש של הריפו. אחרי כל תרגיל, כתוב כמה שורות על טבלת הסיכום שהכלי מדפיס: מה ראית, ולמה לדעתך זה קרה. אם אתה עובד עם Claude Code בתוך הריפו, תן לו לקרוא את מה שכתבת: הקובץ CLAUDE.md הופך אותו למנחה שמחזיר הערות.",
     setup: [
-      "python3 -m venv .venv && source .venv/bin/activate",
-      "pip install -r requirements.txt",
+      "uv venv .venv --python 3.12 && source .venv/bin/activate",
+      "uv pip install -r requirements.txt -c constraints.txt",
       "cp .env.example .env    # fill in your keys",
       "python -m pytest -q     # offline, free",
     ],

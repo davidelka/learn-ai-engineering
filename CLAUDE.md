@@ -9,6 +9,7 @@ Read this file at the start of every session. Then read `PROGRESS.md` (create it
 - **`hub/course-hub.html`**: the whole hub in one file, opened straight from disk in a browser. It is not committed: build it with `python hub/build_hub.py` after cloning and after every pull. Every lesson and project has seven stations in the same order: goal, intro (an animation plus curated videos and readings), slides, play (interactive simulations), lab, quiz, summary. Progress is stored in the browser's localStorage.
   - The sources are in `hub/src/` (`index.html`, `course.js`, `lessons/NN.js`, `aids/lNN.js`).
   - After editing a source, rebuild with `python hub/build_hub.py`.
+  - The same sources also build the course website: `python hub/build_hub.py --target web` writes `hub/dist/` (separate cached files, each unit loaded when opened, code links pinned to `--ref`). `python hub/smoke_web.py` opens every unit and station in a real browser at phone width and checks every code link points to a file that exists. Run both after changing `hub/src/` or moving files that the hub links to.
 - **`labs/NN-*/`**: one lab per topic. Each has:
   - a Hebrew `README.md` with the exercises;
   - `mine.py` with the learner's TODOs. Each docstring is a CONTRACT: what the function receives, returns and must guarantee, not how;

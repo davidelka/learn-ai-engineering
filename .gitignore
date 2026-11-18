@@ -9,3 +9,6 @@ labs/*/results/*
 
 # built from hub/src by python hub/build_hub.py
 hub/course-hub.html
+
+# website build output (python hub/build_hub.py --target web)
+hub/dist/
