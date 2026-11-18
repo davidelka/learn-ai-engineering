@@ -339,6 +339,9 @@ bdi.lt { unicode-bidi: isolate; }
 .live-item { border-inline-start: 3px solid var(--accent); padding: 4px 10px; display: grid; gap: 2px; }
 .live-item .when { font-family: var(--mono); font-size: .75rem; color: var(--muted); }
 .q .opt code, .q h3 code { font-size: .85em; }
+.site-foot { color: var(--muted); font-size: .8rem; padding-top: 28px; padding-bottom: 28px; border-top: 1px solid var(--line); margin-top: 28px; }
+.site-foot p { margin: 4px 0; }
+.site-foot a { color: var(--muted); }
 </style>
 
 <div dir="rtl">
@@ -350,6 +353,10 @@ bdi.lt { unicode-bidi: isolate; }
     </div>
   </header>
   <main class="wrap" id="app"></main>
+  <footer class="wrap site-foot">
+    <p>הקוד ברישיון MIT, והתוכן (טקסטים, שקופיות, תרגילים) ברישיון CC BY-NC 4.0: מותר לשתף ולשנות, לא לשימוש מסחרי. כל החברות, האנשים והנתונים בקורס בדויים. הסרטונים והמאמרים בתחנות המבוא שייכים ליוצריהם, ומופיעים כקישורים.</p>
+    <p><a href="https://github.com/davidelka/learn-ai-engineering" target="_blank" rel="noopener">הריפו ב-GitHub</a> · <a href="https://github.com/davidelka/learn-ai-engineering/issues" target="_blank" rel="noopener">דיווח על טעות</a></p>
+  </footer>
   <div class="toast" id="toast" hidden><span id="toast-text"></span></div>
 </div>
 
@@ -526,6 +533,28 @@ function toast(t) { $("#toast-text").textContent = t; $("#toast").hidden = false
 function lessonDone(id) { const s = Progress.get(["stations", id]) || {}; return STATIONS.filter((x) => s[x.key]).length; }
 const pad = (n) => String(n).padStart(2, "0");
 const REPO_URL = "https://github.com/davidelka/learn-ai-engineering";
+const REPO_REF = window.HUB_REF || "main";      // the web build pins this to a release tag, so the site and the code match
+const IS_WEB = !!window.HUB_WEB;               // set by: python hub/build_hub.py --target web
+function codeUrl(path, line) {
+  const isDir = !/\.[a-z0-9]+$/i.test(path);
+  return `${REPO_URL}/${isDir ? "tree" : "blob"}/${REPO_REF}/${path}${line ? "#L" + line : ""}`;
+}
+function codeLink(path, label, line) {
+  return `<a class="btn small" href="${codeUrl(path, line)}" target="_blank" rel="noopener" dir="ltr">${esc(label || path)} ↗</a>`;
+}
+/* Lazy loading (web build only): the home page needs only each unit's title and hours; the unit's own
+   scripts (lesson, aids, lab guide) are fetched the first time it is opened. The single-file build has
+   everything inline and LESSON_FILES is undefined, so nothing here runs there. */
+const loaded = {};
+function loadScript(src) {
+  return new Promise((ok, fail) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = () => fail(new Error(src)); document.head.append(el); });
+}
+async function ensureLesson(id) {
+  const files = (window.LESSON_FILES || {})[id];
+  if (!files || loaded[id]) return;
+  for (const f of files) await loadScript(f);          // in order: the lesson, then its aids, then its lab guide
+  loaded[id] = true;
+}
 
 /* ---------------- router ---------------- */
 let cleanup = [];
@@ -550,8 +579,16 @@ function route() {
   cleanup.forEach((f) => f()); cleanup = [];
   try { renderSide(); } catch (e) {}
   const m = location.hash.match(/^#l(\d\d)(?:s(\d))?$/);
-  if (m && window.LESSONS[m[1]]) renderLesson(m[1], m[2] ? Math.min(7, Math.max(1, +m[2])) - 1 : null);
-  else renderHome();
+  if (m && window.LESSONS[m[1]]) {
+    const show = () => { renderLesson(m[1], m[2] ? Math.min(7, Math.max(1, +m[2])) - 1 : null); window.scrollTo(0, 0); };
+    if (loaded[m[1]] || !(window.LESSON_FILES || {})[m[1]]) return show();
+    $("#app").innerHTML = `<p class="muted" style="padding:24px 0">טוען את השיעור…</p>`;
+    const want = location.hash;
+    ensureLesson(m[1]).then(() => { if (location.hash === want) show(); })
+      .catch(() => { $("#app").innerHTML = `<div class="card"><h3>השיעור לא נטען</h3><p>בדוק את החיבור לאינטרנט ורענן את הדף.</p></div>`; });
+    return;
+  }
+  renderHome();
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
@@ -582,6 +619,12 @@ function renderHome() {
     <div class="row"><a class="btn primary" href="${cont}">${last ? "להמשיך מאיפה שעצרתי" : "להתחיל את שיעור 1"}</a><span class="muted" style="font-size:.85rem">${doneStations} מתוך ${total} תחנות</span></div>
   </section>`));
 
+  app.append(h(`<section class="card"><div class="eyebrow">Practice</div><h2>לתרגל עם הקוד</h2>
+    <p style="margin:0">ההסברים, השקופיות, הסימולציות והמבחנים נמצאים כאן. את <b>המעבדות והפרויקטים</b> עושים במחשב שלך, מתוך ריפו הקורס ב-GitHub: בכל מעבדה כותבים קוד בקובץ <code>mine.py</code>, בודקים אותו בטסטים, ונעזרים ברמזים מדורגים כשנתקעים. בתחנת המעבדה של כל שיעור יש קישורים ישירים לקבצים שלו.</p>
+    <p class="muted" style="margin:0">צריך Python 3.12 ו-Git. רוב המעבדות רצות מול ספק מדומה (<code>mockllm</code>), בחינם ובלי מפתחות. הרצות מול ספקים אמיתיים הן אופציונליות, והעלות שלהן מפורטת ב-<code>LIVE_CHECKS.md</code> (כמה דולרים לכל הקורס).</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px">${codeLink("README.md", "הוראות ההתקנה")}<a class="btn small" href="${REPO_URL}" target="_blank" rel="noopener">הריפו ב-GitHub ↗</a>${codeLink("LIVE_CHECKS.md", "עלויות")}</div></section>`));
+  app.append(h(`<section class="card"><div class="eyebrow">Honest numbers</div><h2>על המספרים בקורס</h2>
+    <p class="muted" style="margin:0">הקורס נבנה בלי מפתחות API, בלי Docker ובלי GPU. כל מספר בשקופיות מגיע מהרצה מקומית מול מודלים מדומים, וזה כתוב ליד המספר. כשמריצים מול ספק אמיתי, המספר שלך הוא הנכון. ממצאים כאלה מצטברים בלשונית "ממצאים חיים" של כל מעבדה. שמות מודלים ומחירים נבדקו בנובמבר 2026.</p></section>`));
   const how = h(`<section class="card"><div class="eyebrow">How a lesson is built</div><h2>איך בנוי כל שיעור</h2>
     <p class="muted" style="margin:0">כל שיעור עובר באותן שבע תחנות, באותו סדר. אפשר לקפוץ בין תחנות, וכל תחנה שמסיימים מסומנת.</p>
     <ol class="mmm">${STATIONS.map((s) => `<li><div><b>${s.name}</b><span>${s.what}</span></div></li>`).join("")}</ol></section>`);
@@ -604,6 +647,23 @@ function renderHome() {
     }
     app.append(sec);
   }
+  const pc = h(`<section class="card" style="margin-top:18px"><div class="eyebrow">Your progress</div><h2>ההתקדמות שלך</h2>
+    <p class="muted" style="margin:0">ההתקדמות נשמרת רק בדפדפן הזה, ולא נשלחת לשום מקום. כדי לעבור למחשב אחר, או לפני ניקוי של נתוני הדפדפן, שומרים אותה לקובץ וטוענים אותו בצד השני.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn small" id="pg-save">שמירה לקובץ</button><label class="btn small">טעינה מקובץ<input type="file" id="pg-load" accept="application/json,.json" hidden></label></div></section>`);
+  $("#pg-save", pc).addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ kind: "ai-engineer-progress", v: 1, state: Progress.state }, null, 1)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ai-engineer-progress.json"; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $("#pg-load", pc).addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!d || d.kind !== "ai-engineer-progress" || typeof d.state !== "object") throw new Error("bad file");
+      Progress.state = merge(Progress.state, d.state); Progress.save(true); Progress.emit(); toast("ההתקדמות נטענה");
+    } catch (err) { toast("זה לא קובץ התקדמות של הקורס"); }
+  });
+  app.append(pc);
 }
 
 /* ---------------- lesson ---------------- */
@@ -671,7 +731,7 @@ function stIntro(L, c) {
   const anim = L.intro.animation || "tokenloop";
   const a = h(`<div class="card"><div class="eyebrow">Animation</div><h3>${esc(L.intro.animationTitle || "טוקן אחרי טוקן: איך מודל כותב תשובה")}</h3>${L.intro.animationGuide ? `<details class="guide" open><summary>איך לקרוא את האנימציה</summary>${L.intro.animationGuide}</details>` : ""}<div id="anim"></div></div>`);
   c.append(a);
-  const mount = { tokenloop: mountTokenLoop, streaming: mountStreaming, constrained: mountConstrained }[anim];
+  const mount = window[{ tokenloop: "mountTokenLoop", streaming: "mountStreaming", constrained: "mountConstrained" }[anim]];
   const mount2 = mount || (window.AIDS || {})[anim];
   if (mount2) cleanup.push(mount2($("#anim", a)) || (() => {}));
   c.append(h(`<h3 style="margin-top:6px">${L.intro.videos.some((v) => v.kind && v.kind !== "וידאו") ? "צפייה וקריאה" : "סרטונים"}</h3>`));
@@ -719,7 +779,7 @@ function stPlay(L, c) {
     const card = h(`<div class="card"><div class="eyebrow">Simulation</div><h3>${esc(s.title)}</h3><p class="muted" style="margin:0">${esc(s.lead)}</p><div class="sim-host"></div>
       <div><h3 style="font-size:.95rem">משימות</h3><ol class="task-list">${s.tasks.map((t) => `<li>${t}</li>`).join("")}</ol></div></div>`);
     c.append(card);
-    const mount = { sampling: mountSampling, compare: mountCompare, retry: mountRetry, cost: mountCost, schema: mountSchemaLab, repairsim: mountRepairSim, bugs: mountBugs }[s.id] || (window.AIDS || {})[s.id];
+    const mount = window[{ sampling: "mountSampling", compare: "mountCompare", retry: "mountRetry", cost: "mountCost", schema: "mountSchemaLab", repairsim: "mountRepairSim", bugs: "mountBugs" }[s.id]] || (window.AIDS || {})[s.id];
     if (mount) { const off = mount($(".sim-host", card)); if (typeof off === "function") cleanup.push(off); }
   }
   if (L.sims.some((s) => s.id === "sampling"))
@@ -743,12 +803,16 @@ function stLab(L, c, id) {
     const g = GG.guide;
     c.append(h(`<div class="card labguide"><div class="eyebrow">About this lab</div><h3>מה באים לעשות במעבדה</h3>${g.goal || ""}${g.flow ? `<h3 style="margin-top:6px">איך המעבדה בנויה</h3>${g.flow}` : ""}</div>`));
     if (g.untested) c.append(h(`<div class="card untested"><div class="eyebrow">Verified / not verified</div><h3>מה נבדק בבניית המעבדה, ומה לא</h3>${g.untested}</div>`));
-    if (g.map && g.map.length) c.append(h(`<details class="card guide"><summary>מפת הקבצים: מה נמצא איפה (${g.map.length})</summary><ul class="filemap">${g.map.map((m) => `<li><code>${esc(m.path)}</code><span>${m.role}</span></li>`).join("")}</ul></details>`));
+    if (g.map && g.map.length) c.append(h(`<details class="card guide"><summary>מפת הקבצים: מה נמצא איפה (${g.map.length})</summary><ul class="filemap">${g.map.map((m) => `<li>${(window.NOLINK || []).includes(m.path) ? `<code>${esc(m.path)}</code>` : `<a href="${codeUrl(((window.MAPLINK || {})[m.path] || m.path).replace(/\/$/, ""))}" target="_blank" rel="noopener" dir="ltr"><code>${esc(m.path)}</code></a>`}<span>${m.role}</span></li>`).join("")}</ul></details>`));
   }
   if (L.lab.repoPath) {
-    c.append(h(`<div class="card"><div class="eyebrow">Course repo</div><h3>ריפו הקורס</h3>
-      <p class="muted" style="margin:0">הקוד כבר אצלך בריפו הפרטי. מושכים את העדכון, וכל ההוראות נמצאות גם ב-README של המעבדה.</p>
-      <div class="row"><a class="btn small" href="${REPO_URL}/tree/main/${L.lab.repoPath}" target="_blank" rel="noopener" dir="ltr">${esc(L.lab.repoPath)} ↗</a></div></div>`));
+    const P = L.lab.repoPath, CM = (window.CODEMAP || {})[id] || {};
+    const links = [codeLink(P, P)].concat((CM.files || []).map((f) => codeLink(P + "/" + f, f)));
+    c.append(h(`<div class="card"><div class="eyebrow">Course repo</div><h3>הקוד לתרגול</h3>
+      <p class="muted" style="margin:0">${IS_WEB
+        ? `את המעבדה עושים במחשב שלך, מתוך ריפו הקורס ב-GitHub. פעם אחת: <code dir="ltr">git clone ${REPO_URL}.git ~/learn-ai-engineering</code> ואז ההתקנה ב-README הראשי. הקישורים פותחים את הקבצים של המעבדה הזו, בדיוק בגרסה שהאתר מתאר.`
+        : `הקוד נמצא בריפו הקורס אצלך. מושכים את העדכון, וכל ההוראות נמצאות גם ב-README של המעבדה.`}</p>
+      <div class="row" style="flex-wrap:wrap;gap:6px">${links.join("")}</div></div>`));
   } else {
     const repo = h(`<div class="card"><div class="eyebrow">Course repo</div><h3>ריפו הקורס</h3>
       <p class="muted" style="margin:0">Prompt Lab, Arena, ספירת טוקנים, promptfoo ונתוני החברה המדומה Acme. מומלץ להוריד במחשב, לפתוח, ולהעלות ל-GitHub פרטי.</p>
@@ -775,12 +839,20 @@ function stLab(L, c, id) {
     const done = !!Progress.get(["ex", id, ex.id]);
     const el = h(`<div class="ex${done ? " done" : ""}"><input type="checkbox" id="ex-${id}-${ex.id}" ${done ? "checked" : ""}><div><label for="ex-${id}-${ex.id}"><h3>${ex.id.replace("ex", "")}. ${esc(ex.title)}</h3></label><p>${richText(ex.text)}</p></div></div>`);
     if (ex.cmd) $("div", el).append(cmdBlock(ex.cmd));
+    const CMx = (window.CODEMAP || {})[id];
+    if (CMx && CMx.fns) {
+      const said = (ex.text || "") + " " + (ex.cmd || "") + " " + (ex.title || "");
+      const fns = Object.keys(CMx.fns).filter((f) => new RegExp("(^|[^A-Za-z0-9_])" + f + "([^A-Za-z0-9_]|$)").test(said));
+      if (fns.length) $("div", el).append(h(`<div class="row codelinks" style="flex-wrap:wrap;gap:6px"><span class="muted" style="font-size:.85rem">הקוד שכותבים:</span>${fns.map((f) => codeLink(CMx.fns[f][0], f + "()", CMx.fns[f][1])).join("")}</div>`));
+    }
     const exCode = GG && GG.code && GG.code[ex.id];
     if (exCode) $("div", el).append(h(`<details class="codeinfo"><summary>מה קורה בקוד</summary>${exCode}</details>`));
     $("input", el).addEventListener("change", (e) => { Progress.set(["ex", id, ex.id], e.target.checked ? 1 : 0); el.classList.toggle("done", e.target.checked); });
     c.append(el);
   }
-  c.append(h(`<div class="callout"><b>הגשה:</b> שלח לי בצ'אט את טבלת הסיכום של כל תרגיל ושתיים-שלוש שורות פרשנות. אני בודק כמו מנחה.</div>`));
+  c.append(h(IS_WEB
+    ? `<div class="callout"><b>בדיקה:</b> תרגילי קוד נבדקים בטסטים של המעבדה (הפקודה ליד כל תרגיל). על שאלות הפרשנות כדאי לכתוב שתיים-שלוש שורות ולהשוות לסיכום של השיעור. אם אתה עובד עם Claude Code בתוך הריפו, הקובץ <code>CLAUDE.md</code> הופך אותו למנחה שבודק את התשובות שלך.</div>`
+    : `<div class="callout"><b>הגשה:</b> שלח לי בצ'אט את טבלת הסיכום של כל תרגיל ושתיים-שלוש שורות פרשנות. אני בודק כמו מנחה.</div>`));
   labTabs(c, id);
 }
 function liveCard(id) {
