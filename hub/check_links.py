@@ -23,7 +23,7 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = re.compile(r"""https?://[^\s"'<>()\]\\`]+""")
-SKIP = re.compile(r"localhost|127\.0\.0\.1|0\.0\.0\.0|example\.(com|org)|\.example\b|acme\.|github\.com/davidelka|\{|\$")
+SKIP = re.compile(r"localhost|127\.0\.0\.1|0\.0\.0\.0|example\.(com|org)|\.example\b|acme\.|github\.com/davidelka/learn-ai-engineering|\{|\$")
 SOFT = {401, 403, 405, 429, 999}  # bot walls: "check by hand", not "broken"
 
 

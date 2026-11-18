@@ -1,0 +1,33 @@
+# Runs on every push and pull request. Offline and free: no API keys, no Docker, no cloud.
+#   tests: the environment suite (python -m pytest -q), with the pinned versions in constraints.txt
+#   site:  builds the website and opens every unit and station in a real browser (hub/smoke_web.py),
+#          which also checks that every code link on the site points to a file that exists
+name: CI
+on:
+  push:
+    branches: [main, solutions]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv venv .venv --python 3.12
+      - run: uv pip install -r requirements.txt -c constraints.txt
+      - run: .venv/bin/python -m pytest -q
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
+      - run: python hub/build_hub.py --target web --ref ${{ github.sha }}
+      - run: python hub/smoke_web.py
+      - run: python hub/build_hub.py && python hub/smoke_web.py --single

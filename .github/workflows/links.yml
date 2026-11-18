@@ -1,0 +1,30 @@
+# Once a week: check the ~380 external links the course cites (papers, docs, videos). Docs move.
+# A broken link opens (or updates) one issue labeled "broken-links"; it never blocks anything.
+name: Link check
+on:
+  schedule:
+    - cron: "17 5 * * 1"   # Mondays 05:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install httpx
+      - id: check
+        run: python hub/check_links.py > links.txt 2>&1 || echo "broken=1" >> "$GITHUB_OUTPUT"
+      - if: steps.check.outputs.broken == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create broken-links --color d93f0b --force
+          n=$(gh issue list --label broken-links --state open --json number --jq '.[0].number')
+          body="$(echo 'Weekly link check found broken links (python hub/check_links.py):'; echo; echo '```'; tail -c 60000 links.txt; echo '```')"
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$body"; else gh issue create --title "Broken external links" --label broken-links --body "$body"; fi
