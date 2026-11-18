@@ -81,7 +81,7 @@ python -m acmeqa ingest                          # האינדקס: עובד כב
 **1. הרצה ראשונה (חינם).** בונים את האינדקס ומריצים שוב, כדי לראות שהוא אינקרמנטלי. החלק הזה מוכן ועובד בלי קוד שלך. אחר כך מריצים את הבדיקות, כדי לראות מה מחכה לך.
 
 ```bash
-python -m acmeqa ingest          # added 55 ... chunks +404
+python -m acmeqa ingest          # added 55 ... chunks +404 (about 400: the exact count depends on the tokenizer, tiktoken or its offline approximation)
 python -m acmeqa ingest          # unchanged 55, chunks +0
 python -m acmeqa stats
 python -m pytest -q tests        # רובן נכשלות: אלה אבני הדרך 3 עד 8

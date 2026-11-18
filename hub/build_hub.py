@@ -263,7 +263,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--target", choices=("single", "web"), default="single")
     ap.add_argument("--ref", default="main", help="git ref the code links point to (a release tag for the website)")
-    ap.add_argument("--site-url", default="https://learn-ai-engineering.pages.dev")
+    ap.add_argument("--site-url", default="https://learn-ai-engineering-2hn.pages.dev")
     a = ap.parse_args()
     if a.target == "web":
         build_web(a.ref, a.site_url.rstrip("/"))
