@@ -64,9 +64,14 @@ class TiktokenTokenizer:
         return out
 
 
-@lru_cache(maxsize=4)
 def get_tokenizer(name: str = "auto") -> Tokenizer:
-    name = os.environ.get("RAGKIT_TOKENIZER", name) if name == "auto" else name
+    # read RAGKIT_TOKENIZER on every call, before the cache: caching "auto" itself would freeze
+    # whichever tokenizer the first caller happened to get, and the variable would stop working
+    return _tokenizer(os.environ.get("RAGKIT_TOKENIZER", name) if name == "auto" else name)
+
+
+@lru_cache(maxsize=8)
+def _tokenizer(name: str) -> Tokenizer:
     if name == "approx":
         return ApproxTokenizer()
     if name in ("auto", "tiktoken"):

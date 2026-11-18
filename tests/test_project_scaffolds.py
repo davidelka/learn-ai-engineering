@@ -38,10 +38,6 @@ def test_m1_scaffold(tmp_path, monkeypatch):
     from acmeqa.ingest import IngestJob
     job = IngestJob(Settings(index_dir=tmp_path / "idx"))
     rep = job.run()
-    if rep.chunks_added != 404:                              # show which documents chunk differently
-        import collections, json
-        per_doc = collections.Counter(json.loads(l)["doc_id"] for l in open(tmp_path / "idx" / "chunks.jsonl"))
-        print("CHUNKS_PER_DOC", json.dumps(dict(sorted(per_doc.items()))))
     assert rep.chunks_added == 404 and not rep.errors        # ingestion is ready-made
     _all_todo(hooks, importlib.import_module("mine"))
 
