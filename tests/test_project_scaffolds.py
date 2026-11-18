@@ -27,7 +27,10 @@ def _project(name: str, pkg: str):
     return importlib.import_module(f"{pkg}.hooks")
 
 
-def test_m1_scaffold(tmp_path):
+def test_m1_scaffold(tmp_path, monkeypatch):
+    # chunk counts depend on the tokenizer: tiktoken when its vocabulary can be downloaded, an
+    # approximation otherwise. Pin the approximation so the count is the same on every machine.
+    monkeypatch.setenv("RAGKIT_TOKENIZER", "approx")
     hooks = _project("m1-knowledge-assistant", "acmeqa")
     if hooks.has_reference():
         pytest.skip("solutions branch: the reference implementations are here")
